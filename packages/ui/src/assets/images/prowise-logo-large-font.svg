@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 260" role="img" aria-label="Prowise logo">
+  <defs>
+    <linearGradient id="pw-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40,24)">
+    <rect x="0"   y="72"  width="128" height="128" rx="36" fill="url(#pw-g)"/>
+    <rect x="96"  y="0"   width="128" height="128" rx="36" fill="url(#pw-g)"/>
+    <rect x="96"  y="144" width="128" height="128" rx="36" fill="url(#pw-g)"/>
+  </g>
+  <text x="320" y="170"
+        font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial"
+        font-size="110" font-weight="700" letter-spacing="-1" fill="#0F172A">
+    Prowise
+  </text>
+</svg>
