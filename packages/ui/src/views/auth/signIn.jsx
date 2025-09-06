@@ -92,9 +92,8 @@ const SignInPage = () => {
 
     useEffect(() => {
         store.dispatch(logoutSuccess())
-        if (!isOpenSource) {
-            getDefaultProvidersApi.request()
-        }
+        // Always fetch SSO providers, including for Open Source with environment variables
+        getDefaultProvidersApi.request()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 

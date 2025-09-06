@@ -40,6 +40,11 @@ export class LoginMethodController {
                     return res.status(StatusCodes.OK).json({})
                 }
             } else {
+                // For Open Source, check if Auth0 is configured via environment variables
+                const { AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET } = process.env
+                if (AUTH0_DOMAIN && AUTH0_CLIENT_ID && AUTH0_CLIENT_SECRET) {
+                    return res.status(StatusCodes.OK).json({ providers: ['auth0'] })
+                }
                 return res.status(StatusCodes.OK).json({})
             }
             const loginMethodService = new LoginMethodService()

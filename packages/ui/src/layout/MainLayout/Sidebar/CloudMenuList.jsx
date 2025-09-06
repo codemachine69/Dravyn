@@ -34,19 +34,29 @@ const CloudMenuList = () => {
     const { isCloud } = useConfig()
 
     const signOutClicked = () => {
-        logoutApi.request()
-        enqueueSnackbar({
-            message: 'Logging out...',
-            options: {
-                key: new Date().getTime() + Math.random(),
-                variant: 'success',
-                action: (key) => (
-                    <Button style={{ color: 'white' }} onClick={() => closeSnackbar(key)}>
-                        <IconX />
-                    </Button>
-                )
-            }
-        })
+        // Get current user from store
+        const currentUser = store.getState().auth.user
+        
+        // Check if user is logged in via SSO
+        if (currentUser?.ssoProvider) {
+            // Redirect to SSO logout URL
+            window.location.href = `/api/v1/${currentUser.ssoProvider}/logout`
+        } else {
+            // Regular logout for non-SSO users
+            logoutApi.request()
+            enqueueSnackbar({
+                message: 'Logging out...',
+                options: {
+                    key: new Date().getTime() + Math.random(),
+                    variant: 'success',
+                    action: (key) => (
+                        <Button style={{ color: 'white' }} onClick={() => closeSnackbar(key)}>
+                            <IconX />
+                        </Button>
+                    )
+                }
+            })
+        }
     }
 
     useEffect(() => {

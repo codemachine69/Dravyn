@@ -169,19 +169,33 @@ const Header = ({ handleLeftDrawerToggle }) => {
     }
 
     const signOutClicked = () => {
-        logoutApi.request()
-        enqueueSnackbar({
-            message: 'Logging out...',
-            options: {
-                key: new Date().getTime() + Math.random(),
-                variant: 'success',
-                action: (key) => (
-                    <Button style={{ color: 'white' }} onClick={() => closeSnackbar(key)}>
-                        <IconX />
-                    </Button>
-                )
-            }
-        })
+        console.log('🔧 Frontend: Logout clicked, currentUser:', currentUser)
+        console.log('🔧 Frontend: ssoProvider:', currentUser?.ssoProvider)
+        console.log('🔧 Frontend: isSSO:', currentUser?.isSSO)
+        
+        // Check if user is logged in via SSO (use isSSO flag as fallback)
+        if (currentUser?.ssoProvider || currentUser?.isSSO) {
+            const ssoProvider = currentUser?.ssoProvider || 'auth0' // Default to auth0 if ssoProvider is missing
+            console.log('🔧 Frontend: Redirecting to SSO logout:', `/api/v1/${ssoProvider}/logout`)
+            // Redirect to SSO logout URL
+            window.location.href = `/api/v1/${ssoProvider}/logout`
+        } else {
+            console.log('🔧 Frontend: Using regular logout')
+            // Regular logout for non-SSO users
+            logoutApi.request()
+            enqueueSnackbar({
+                message: 'Logging out...',
+                options: {
+                    key: new Date().getTime() + Math.random(),
+                    variant: 'success',
+                    action: (key) => (
+                        <Button style={{ color: 'white' }} onClick={() => closeSnackbar(key)}>
+                            <IconX />
+                        </Button>
+                    )
+                }
+            })
+        }
     }
 
     useEffect(() => {
@@ -194,6 +208,15 @@ const Header = ({ handleLeftDrawerToggle }) => {
             console.error(e)
         }
     }, [logoutApi.data])
+
+    // Debug: Log user object when it changes
+    useEffect(() => {
+        console.log('🔧 Frontend: User object changed:', currentUser)
+        console.log('🔧 Frontend: ssoProvider:', currentUser?.ssoProvider)
+        console.log('🔧 Frontend: ssoToken:', currentUser?.ssoToken)
+        console.log('🔧 Frontend: isSSO:', currentUser?.isSSO)
+        console.log('🔧 Frontend: All user keys:', currentUser ? Object.keys(currentUser) : 'null')
+    }, [currentUser])
 
     useEffect(() => {
         if (isCloud || isOpenSource) {

@@ -297,6 +297,19 @@ export const setTokenOrCookies = (
     }
     const returnUser = generateSafeCopy(user)
     returnUser.isSSO = !isSSO ? false : isSSO
+    
+    // Debug: Log what's being sent to frontend
+    console.log('🔧 setTokenOrCookies: Original user:', { 
+        ssoProvider: user.ssoProvider, 
+        ssoToken: user.ssoToken, 
+        ssoRefreshToken: user.ssoRefreshToken 
+    })
+    console.log('🔧 setTokenOrCookies: Return user:', { 
+        ssoProvider: returnUser.ssoProvider, 
+        ssoToken: returnUser.ssoToken, 
+        ssoRefreshToken: returnUser.ssoRefreshToken,
+        isSSO: returnUser.isSSO
+    })
 
     if (redirect) {
         // 1. Generate a random token

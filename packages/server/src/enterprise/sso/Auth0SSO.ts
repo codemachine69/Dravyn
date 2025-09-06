@@ -20,15 +20,22 @@ class Auth0SSO extends SSOBase {
     }
 
     static getCallbackURL(): string {
-        const APP_URL = process.env.APP_URL || 'http://127.0.0.1:' + process.env.PORT
-        return APP_URL + Auth0SSO.CALLBACK_URI
+        const PORT = process.env.PORT || '3000'
+        const BACKEND_URL = `http://localhost:${PORT}`
+        return BACKEND_URL + Auth0SSO.CALLBACK_URI
     }
 
     setSSOConfig(ssoConfig: any) {
+        console.log('🔧 Auth0SSO: setSSOConfig called with:', !!ssoConfig)
         super.setSSOConfig(ssoConfig)
         if (ssoConfig) {
             const { domain, clientID, clientSecret } = this.ssoConfig
 
+            console.log('🔧 Auth0SSO: Registering Auth0 strategy with config:', {
+                domain: domain || 'your_auth0_domain',
+                clientID: clientID || 'your_auth0_client_id',
+                callbackURL: Auth0SSO.getCallbackURL() || 'http://localhost:3000/auth/auth0/callback'
+            })
             passport.use(
                 'auth0',
                 new Auth0Strategy(
@@ -67,8 +74,14 @@ class Auth0SSO extends SSOBase {
     }
 
     initialize() {
+        console.log('🔧 Auth0SSO: initialize() method called')
+        console.log('🔧 Auth0SSO: Initializing Auth0 SSO with config:', !!this.ssoConfig)
+        console.log('🔧 Auth0SSO: ssoConfig details:', this.ssoConfig)
+        console.log('🔧 Auth0SSO: About to call setSSOConfig')
         this.setSSOConfig(this.ssoConfig)
+        console.log('🔧 Auth0SSO: setSSOConfig completed')
 
+        console.log('🔧 Auth0SSO: Registering login route:', Auth0SSO.LOGIN_URI)
         this.app.get(Auth0SSO.LOGIN_URI, (req, res, next?) => {
             if (!this.getSSOConfig()) {
                 return res.status(400).json({ error: 'Auth0 SSO is not configured.' })
@@ -78,28 +91,80 @@ class Auth0SSO extends SSOBase {
             })(req, res, next)
         })
 
-        this.app.get(Auth0SSO.CALLBACK_URI, (req, res, next?) => {
+        console.log('🔧 Auth0SSO: Registering logout route:', Auth0SSO.LOGOUT_URI)
+        this.app.get(Auth0SSO.LOGOUT_URI, (req, res, next?) => {
+            console.log('🔧 Auth0SSO: Logout route accessed')
             if (!this.getSSOConfig()) {
                 return res.status(400).json({ error: 'Auth0 SSO is not configured.' })
             }
-            passport.authenticate('auth0', async (err: any, user: LoggedInUser) => {
+            
+            // Clear the Flowise session
+            req.logout((err) => {
+                if (err) {
+                    console.log('🔧 Auth0SSO: Error during logout:', err)
+                    return res.status(500).json({ message: 'Logout failed' })
+                }
+                
+                // Destroy the session
+                req.session.destroy((err) => {
+                    if (err) {
+                        console.log('🔧 Auth0SSO: Error destroying session:', err)
+                        return res.status(500).json({ message: 'Failed to destroy session' })
+                    }
+                    
+                    // Clear cookies
+                    res.clearCookie('connect.sid')
+                    res.clearCookie('token')
+                    res.clearCookie('refreshToken')
+                    
+                    // Redirect to Auth0 logout URL to clear Auth0 session completely
+                    const { domain, clientID } = this.ssoConfig
+                    const returnTo = `${process.env.APP_URL || 'http://localhost:8080'}/signin`
+                    const auth0LogoutUrl = `https://${domain}/v2/logout?returnTo=${encodeURIComponent(returnTo)}&client_id=${clientID}`
+                    
+                    console.log('🔧 Auth0SSO: Redirecting to Auth0 logout:', auth0LogoutUrl)
+                    console.log('🔧 Auth0SSO: This will clear both Flowise and Auth0 sessions')
+                    res.redirect(auth0LogoutUrl)
+                })
+            })
+        })
+
+        console.log('🔧 Auth0SSO: Registering callback route:', Auth0SSO.CALLBACK_URI)
+        this.app.get(Auth0SSO.CALLBACK_URI, (req, res, next?) => {
+            console.log('🔧 Auth0SSO: Callback route accessed with query:', req.query)
+            if (!this.getSSOConfig()) {
+                return res.status(400).json({ error: 'Auth0 SSO is not configured.' })
+            }
+            console.log('🔧 Auth0SSO: About to call passport.authenticate')
+            try {
+                passport.authenticate('auth0', async (err: any, user: LoggedInUser) => {
+                console.log('🔧 Auth0SSO: Passport authenticate callback called with:', { err: !!err, user: !!user })
                 try {
                     if (err || !user) {
+                        console.log('🔧 Auth0SSO: Authentication failed:', { err: err?.message, hasUser: !!user })
                         if (err?.name == 'SSO_LOGIN_FAILED') {
                             const error = { message: err.message }
                             const signinUrl = `/signin?error=${encodeURIComponent(JSON.stringify(error))}`
+                            console.log('🔧 Auth0SSO: Redirecting to signin with error:', signinUrl)
                             return res.redirect(signinUrl)
                         }
                         return next ? next(err) : res.status(401).json(err)
                     }
 
+                    console.log('🔧 Auth0SSO: Authentication successful, regenerating session')
                     req.session.regenerate((regenerateErr) => {
                         if (regenerateErr) {
+                            console.log('🔧 Auth0SSO: Session regeneration failed:', regenerateErr)
                             return next ? next(regenerateErr) : res.status(500).json({ message: 'Session regeneration failed' })
                         }
 
+                        console.log('🔧 Auth0SSO: Session regenerated, logging in user')
                         req.login(user, { session: true }, async (error) => {
-                            if (error) return next ? next(error) : res.status(401).json(error)
+                            if (error) {
+                                console.log('🔧 Auth0SSO: User login failed:', error)
+                                return next ? next(error) : res.status(401).json(error)
+                            }
+                            console.log('🔧 Auth0SSO: User logged in successfully, setting tokens/cookies')
                             return setTokenOrCookies(res, user, true, req, true, true)
                         })
                     })
@@ -107,6 +172,10 @@ class Auth0SSO extends SSOBase {
                     return next ? next(error) : res.status(401).json(error)
                 }
             })(req, res, next)
+            } catch (error) {
+                console.log('🔧 Auth0SSO: Error in passport.authenticate:', error)
+                return next ? next(error) : res.status(500).json({ error: 'Passport authentication error' })
+            }
         })
     }
 

@@ -187,6 +187,27 @@ export class IdentityManager {
                 if (queryRunner) await queryRunner.release()
             }
         }
+
+
+        if (this.getPlatformType() === Platform.OPEN_SOURCE) {
+            const { AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET } = process.env
+            console.log('🔧 IdentityManager: Checking Auth0 env vars:', { 
+                hasAuth0Domain: !!AUTH0_DOMAIN, 
+                hasAuth0ClientId: !!AUTH0_CLIENT_ID, 
+                hasAuth0ClientSecret: !!AUTH0_CLIENT_SECRET 
+            })
+            if (AUTH0_DOMAIN && AUTH0_CLIENT_ID && AUTH0_CLIENT_SECRET) {
+              console.log('🔧 IdentityManager: Initializing Auth0 SSO for Open Source')
+              this.initializeSsoProvider(app, 'auth0', {
+                domain: AUTH0_DOMAIN,
+                clientID: AUTH0_CLIENT_ID,
+                clientSecret: AUTH0_CLIENT_SECRET,
+                configEnabled: true
+              })
+            } else {
+              console.log('🔧 IdentityManager: Auth0 env vars not found, skipping Auth0 SSO initialization')
+            }
+          }
         // iterate through the remaining providers and initialize them with configEnabled as false
         this.initializeEmptySSO(app)
     }
