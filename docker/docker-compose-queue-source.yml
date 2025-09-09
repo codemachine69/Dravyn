@@ -15,12 +15,14 @@ services:
         container_name: flowise-main
         build:
             context: .. # Build using the Dockerfile in the root directory
-            dockerfile: docker/Dockerfile
+            dockerfile: Dockerfile
         ports:
             - '${PORT}:${PORT}'
         volumes:
             # Mount local .flowise to container's default location
             - ../.flowise:/root/.flowise
+        env_file:
+            - .env
         environment:
             # --- Essential Flowise Vars ---
             - PORT=${PORT:-3000}
