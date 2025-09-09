@@ -1,6 +1,6 @@
 import logo from '@/assets/images/flowise_white.svg'
 import logoDark from '@/assets/images/flowise_dark.svg'
-import customLogo from '@/assets/images/prowise-logo-xlarge-font.svg'
+import customLogo from '@/assets/images/dravyn-logo-xlarge-font.svg'
 
 import { useSelector } from 'react-redux'
 
